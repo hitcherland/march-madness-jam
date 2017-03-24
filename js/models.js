@@ -3,6 +3,7 @@ class Grid extends Mesh {
 		var vertices=[];
 		var triangles=[];
 		var normals=[];
+		var textureCoords=[];
 
 		for (var i = 0; i <= width; i++)
 		{
@@ -10,12 +11,15 @@ class Grid extends Mesh {
 				for (var j = 0; j <= height; j++)
 				{
 						var y = j - height / 2;
-						vertices.push(x*unitLength);
-						vertices.push(y*unitLength);
+						vertices.push(x*unitLength[0]);
+						vertices.push(y*unitLength[1]);
 						vertices.push(0);
 						normals.push(0);
 						normals.push(0);
 						normals.push(1);
+
+						textureCoords.push(i);
+						textureCoords.push(j);
 
 						if (i < width && j < height)
 						{
@@ -29,7 +33,7 @@ class Grid extends Mesh {
 						}
 				}
 		}
-		super(vertices,triangles,normals);
+		super(vertices,triangles,normals,textureCoords);
 	}
 
 	resize(width,height,unitLength) {
@@ -43,8 +47,8 @@ class Grid extends Mesh {
 			for (var j = 0; j <= height; j++)
 			{
 				var y = j - height / 2;
-				vertices.push(x*unitLength);
-				vertices.push(y*unitLength);
+				vertices.push(x*unitLength[0]);
+				vertices.push(y*unitLength[1]);
 				vertices.push(0);
 				normals.push(0);
 				normals.push(0);
@@ -77,6 +81,7 @@ class Sphere extends Mesh {
 		var vertices=[];
 		var triangles=[];
 		var normals=[];
+		var textureCoords=[];
 
 		var dX=2*Math.PI/longitudes;
 		var dY=2*Math.PI/latitudes;
@@ -101,6 +106,13 @@ class Sphere extends Mesh {
         vertices.push(x);
         vertices.push(y);
         vertices.push(z);
+
+//				textureCoords.push((latNumber*1.0/(latitudes-1))*128);
+//				textureCoords.push((longNumber*1.0/(longitudes-1))*128);
+				textureCoords.push(64+sinPhi*64);
+				textureCoords.push(64+sinTheta*64);
+
+
       }
     }
 
@@ -117,7 +129,7 @@ class Sphere extends Mesh {
         triangles.push(first + 1);
 			}
 		}
-		super(vertices,triangles,normals);
+		super(vertices,triangles,normals,textureCoords);
 	}
 }
 
@@ -200,7 +212,46 @@ class Cube extends Mesh {
 			-1,0,0,
 		];
 
-		super(vertices,triangles,normals);
+		var textureCoords=[
+			// front face
+			0, 0,  
+			128, 0,  
+			128, 128,  
+			0, 128,  
+
+			// back face
+			0, 0,  
+			0, 128,  
+			128, 128,  
+			128, 0,  
+
+			// top face
+			0, 128,  
+			0, 128,  
+			128, 128,  
+			128, 128,  
+
+			// bottom face
+			0, 0,  
+			128, 0,  
+			128, 0,  
+			0, 0,  
+
+			// right face
+			128, 0,  
+			128, 128,  
+			128, 128,  
+			128, 0,  
+
+			// left face
+			0, 0,  
+			0, 0,  
+			0, 128,  
+			0, 128,  
+		];
+
+
+		super(vertices,triangles,normals,textureCoords);
 	}
 }
 

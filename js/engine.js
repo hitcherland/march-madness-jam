@@ -5,6 +5,8 @@ var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
 var mvMatrixStack = [];
 var nMatrix = mat3.create();
+var rttFramebuffer;
+var rttTexture;
 
 function mvPushMatrix() {
 	var copy = mat4.create();
@@ -32,11 +34,12 @@ class GameObject {
 	}
 	onStart(parentObject) { this.start(parentObject); for(var i=0; i<this.children.length; i++) this.children[i].onStart(this); this.onTick(); }
 	onTick(parentObject) { this.tick(parentObject); for(var i=0; i<this.children.length; i++) this.children[i].onTick(this); }
-	onDraw(parentObject) { mvPushMatrix(); this.draw(parentObject); for(var i=0; i<this.children.length; i++) this.children[i].onDraw(this); mvPopMatrix() }
+	onDraw(parentObject) { mvPushMatrix(); this.draw(parentObject); for(var i=0; i<this.children.length; i++) this.children[i].onDraw(this); this.postdraw(parentObject); mvPopMatrix() }
 	start(parentObject) { }
 	tick(parentObject) { }
 	draw(parentObject) { }
-	addChild(child) { this.children.push(child); return child;}
+	postdraw(parentObject) { }
+	addChild(child) { this.children.push(child); child.parent=this; return child;}
 }
 
 class Collider extends GameObject {
@@ -86,22 +89,27 @@ class Collider extends GameObject {
 }
 
 class Mesh extends GameObject {
-	constructor(vertices,triangles,normals) {
+	constructor(vertices,triangles,normals,textureCoords) {
 		super();
+		this.parent=null;
 		this.__scale=[1,1,1];
 		this.rotation=[0,0,0];
 		this.position=[0,0,0];
 		this.__actualrotation=null;
 		this.__actualposition=null;
 		this.__actualscale=null;
+		this.__blur=null;
 
 		this.vertexBuffer = null;
 		this.normalBuffer = null;
 		this.triangleBuffer = null;
+		this.textureBuffer = null;
+		this.texture=null;
 
 		this.__vertices=vertices;
 		this.__triangles=triangles
 		this.__normals=normals;
+		this.__textureCoords=textureCoords;
 		this.__started=false;
 	}
 
@@ -109,12 +117,28 @@ class Mesh extends GameObject {
 		this.vertexBuffer = gl.createBuffer();
 		this.normalBuffer = gl.createBuffer();
 		this.triangleBuffer = gl.createBuffer();
+		this.textureBuffer = gl.createBuffer();
 
 		this.vertices=this.__vertices;
 		this.triangles=this.__triangles
 		this.normals=this.__normals;
+		this.textureCoords=this.__textureCoords;
 		this.__started=true;
 		this.scale=this.__scale;
+	}
+
+	get blur() {
+		var blur=this.__blur;
+		var active=this.parent;
+		while(blur===null && active!==null && active!==undefined) {
+			blur=active.blur;
+			active=active.parent;
+		}
+		if(blur===null || blur===undefined) return [0,0,0,0,1,0,0,0,0];
+		return blur;
+	}
+	set blur(s) {
+		this.__blur=s;
 	}
 
 	get scale() { return this.__scale; }
@@ -157,7 +181,21 @@ class Mesh extends GameObject {
 		this.normalBuffer.numItems=Math.floor(this.__normals.length/this.normalBuffer.itemSize);
 	}
 
+	get textureCoords() { return this.__textureCoords; }
+	set textureCoords(ts) {
+		this.__textureCoords=ts;
+		if(ts===undefined) {
+			this.__textureCoords=[];
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER,this.textureBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(this.__textureCoords),gl.STATIC_DRAW);
+		this.textureBuffer.itemSize=2;
+		this.textureBuffer.numItems=Math.floor(this.__textureCoords.length/this.textureBuffer.itemSize);
+	}
+
+
 	draw() {
+		super.draw();
 		mat4.translate(mvMatrix, this.position);
 		mat4.rotate(mvMatrix, this.rotation[0], [1, 0, 0]);
 		mat4.rotate(mvMatrix, this.rotation[1], [0, 1, 0]);
@@ -169,9 +207,24 @@ class Mesh extends GameObject {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, this.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.triangleBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
+    gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, this.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+		gl.uniform1fv(shaderProgram.blurKernelUniform,this.blur);
+		gl.uniform1f(shaderProgram.blurWeightUniform,this.blur.reduce(function(a,b){return a+b;},0));
+
+		if(this.texture !== null) {
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D,this.texture);
+			gl.uniform1i(shaderProgram.samplerUniform,0);
+		} else {
+			gl.uniform1i(shaderProgram.samplerUniform,0);
+		}
+
 		setMatrixUniforms();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.triangleBuffer);
 		gl.drawElements(gl.TRIANGLES, this.triangleBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
 	}
 }
 
@@ -186,6 +239,8 @@ class Game extends GameObject {
 		this.directionalLightColor=[1,1,1];
 		this.directionalLightPosition=[1,1,0];
 		//this.onStart();
+
+		//this.drawQuad=new Grid(1,1,[this.canvas.width/1,this.canvas.height/1]);
 	}
 
 	initGL() {
@@ -215,6 +270,13 @@ class Game extends GameObject {
 
 		shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
 		gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
+
+		shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+		gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+
+		shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
+		shaderProgram.blurKernelUniform = gl.getUniformLocation(shaderProgram, "uBlurKernel[0]");
+		shaderProgram.blurWeightUniform = gl.getUniformLocation(shaderProgram, "uBlurWeight");
 
 		shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
 		shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
@@ -255,15 +317,51 @@ class Game extends GameObject {
 		return shader;
 	}
 
+	initTextureFramebuffer() {
+		rttFramebuffer = gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+		rttFramebuffer.width=Math.pow(2,Math.floor(Math.log(this.canvas.width*2)/Math.LN2)+1);
+		rttFramebuffer.height=Math.pow(2,Math.floor(Math.log(this.canvas.height*2)/Math.LN2)+1);
+
+		rttTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, rttTexture);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, rttFramebuffer.width, rttFramebuffer.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+		gl.generateMipmap(gl.TEXTURE_2D);
+
+		var renderbuffer = gl.createRenderbuffer();
+		gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+		gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, rttFramebuffer.width, rttFramebuffer.height);
+
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture, 0);
+		gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+
+		gl.bindTexture(gl.TEXTURE_2D, null);
+		gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	}
+
+
 	start() {
 		super.start();
 		this.initGL();
 		this.initShaders();
+		//this.initTextureFramebuffer();
+		//this.drawQuad.texture=rttTexture;
+		//this.drawQuad.blur=[1,1,1,1,1,1,1,1,1];
+		//this.drawQuad.start();
+
+
+		//this.drawQuad.position[2]=0;
+
 		//this.onTick();
 	}	
 	
 	draw() {
 		super.draw();
+		//gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+		//gl.viewport(0, 0, rttFramebuffer.width, rttFramebuffer.height);
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -272,17 +370,31 @@ class Game extends GameObject {
 		mat4.identity(mvMatrix);
 		mat4.translate(mvMatrix, this.cameraPosition);
 		
-		gl.uniform3f(shaderProgram.ambientColorUniform,this.ambientLight[0],this.ambientLight[1],this.ambientLight[2]);
-		gl.uniform3f(shaderProgram.directionalColorUniform,this.directionalLightColor[0],this.directionalLightColor[1],this.directionalLightColor[2]);
+		gl.uniform3f(shaderProgram.ambientColorUniform,...this.ambientLight);
+		gl.uniform3f(shaderProgram.directionalColorUniform,...this.directionalLightColor);
 		var adjustedLD = vec3.create();
 		vec3.normalize(this.directionalLightPosition, adjustedLD);
 		vec3.scale(adjustedLD, -1);
 		gl.uniform3fv(shaderProgram.lightingDirectionUniform, adjustedLD);
 	}
 
+	postdraw() {
+		super.postdraw();
+
+		//gl.bindTexture(gl.TEXTURE_2D, rttTexture);
+		//gl.generateMipmap(gl.TEXTURE_2D);
+		//gl.bindTexture(gl.TEXTURE_2D, null);
+
+		//gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		//gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+		//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		//this.drawQuad.draw();
+	}
+
 	tick() {
 		super.tick();
-		requestAnimFrame(this.onTick.bind(this));
 		this.onDraw();
+		requestAnimFrame(this.onTick.bind(this));
+
 	}
 }

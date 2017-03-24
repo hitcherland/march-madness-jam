@@ -1,0 +1,11 @@
+body {
+	margin:0px;
+	background-color:#000;
+}
+#game_container {
+	display:block;
+	margin:auto;
+	background-color:#000;
+	width:800px;
+	height:600px;
+}

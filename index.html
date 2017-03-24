@@ -13,7 +13,7 @@
 			varying vec3 vLightWeighting;
 
 			void main(void) {
-				gl_FragColor = vec4(vLightWeighting, 1.0);
+				gl_FragColor = vec4(vLightWeighting, 1);
 			}
 		</script>
 
@@ -30,12 +30,13 @@
 			uniform vec3 uAmbientLightColor;
 
 			varying vec3 vLightWeighting;
+			varying float directionalLightWeighting;
 
 			void main(void) {
 				gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
 
 				vec3 transformedNormal = uNMatrix * aVertexNormal;
-				float directionalLightWeighting = max(dot(transformedNormal, uLightingDirection), 0.0);
+				directionalLightWeighting = min(max(dot(transformedNormal, uLightingDirection), 0.0),1.0);
 				vLightWeighting = uAmbientLightColor+uDirectionalColor * directionalLightWeighting;
 			}
 		</script>

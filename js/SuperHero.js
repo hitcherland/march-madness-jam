@@ -15,6 +15,46 @@ class Actor extends Mesh {
 			"left": 1,
 			"right": 1,
 		}
+
+		this.personality = {
+			'dance'   :0.5, // moving around a single point 
+
+			//friendliness
+			'approach-approacher':0.5,
+			'approach-stayer':0.5,
+			'approach-leaver':0.5,
+
+			//wariness
+			'stay-approacher':0.5,
+			'stay-stayer':0.5,
+			'stay-leaver':0.5,
+
+			//cowardice
+			'leave-approacher':0.5,
+			'leave-stayer':0.5,
+			'leave-leaver':0.5,
+		}
+
+//		// https://en.wikipedia.org/wiki/16PF_Questionnaire
+//		this.personality = {
+//			'warmth':0.5,               // helping/ignoring
+//			'reasoning':0.5,            //
+//			'emotional stability':0.5,  //
+//			'dominance':0.5,            //
+//			'liveliness':0.5,           //
+//			'rule-consciousness':0.5,   //
+//			'social boldness':0.5,      //
+//			'sensitivity':0.5,          // keep away from people/
+//			'vigilance':0.5,            // ???
+//			'abstractedness':0.5,       // ignores art/looks at art
+//			'privateness':0.5,          // ???
+//			'apprehension':0.5,         // ???
+//			'openness to change':0.5,   // ???
+//			'self-reliance':0.5,        // average time near others
+//			'perfectionism':0.5,        // messing up / fixing patterns around the place
+//			'tension':0.5,              // average std-deviation of motion vs smoothed direction
+//		}
+
 	}
 
 	start(parent) {

@@ -114,28 +114,15 @@ class Player extends Actor {
 		super();
 		this.texture=null;		
 		this.inputs=[];
+
 		this.sphere=this.addChild(new Sphere(10,10));
 		this.sphere.scale=6;	
-	}
+		this.sphere.texture=new Texture.FlatColorTexture(255,0,0);
 
-	start() {
-		super.start();
-		this.texture=gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D,this.texture);
-		var image=new Uint8Array(4*128*128);
-		for(var i=0;i<128*128; i++) {
-			image[4*i+0]=(i%3==1)?0:255;//i>(128*64)?255:0;
-			image[4*i+1]=0;
-			image[4*i+2]=0;
-			image[4*i+3]=255;
-		}
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128,128, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.bindTexture(gl.TEXTURE_2D,null);
+		this.sphere2=this.addChild(new Sphere(10,10));
+		this.sphere2.scale=50;
+		this.sphere2.position[2]=-100;
+		this.sphere2.texture=new Texture.FlatColorTexture(25,255,25);
 	}
 
 	tick(parent) {
@@ -148,8 +135,6 @@ class Player extends Actor {
 		this.position[1]=Math.max(Math.min(this.position[1],290),-290)
 
 		this.children[0].rotation[0]+=0.01
-		//this.children[0].rotation[1]+=0.02
-		//this.children[0].rotation[2]+=0.03
 	}
 }
 
@@ -163,25 +148,8 @@ class Victim extends Actor {
 		this.sphere.scale=4;
 		this.generatePersonality();
 		this.impulse=[0,0];
-	}
-	start() {
-		super.start();
-		this.texture=gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D,this.texture);
-		var image=new Uint8Array(4*128*128);
-		for(var i=0;i<128*128; i++) {
-			image[4*i+0]=Math.random()*128;
-			image[4*i+1]=Math.random()*128;
-			image[4*i+2]=255;
-			image[4*i+3]=255;
-		}
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128,128, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.bindTexture(gl.TEXTURE_2D,null);
+
+		this.sphere.texture=new Texture.FlatColorTexture(Math.random()*128,Math.random()*128,255);
 	}
 
 	generatePersonality() {

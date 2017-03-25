@@ -7,6 +7,7 @@
 		<script src="js/webgl-utils.js"></script>
 		<script src="js/engine.js"></script>
 		<script src="js/models.js"></script>
+		<script src="js/texture.js"></script>
 		<script src="js/SuperHero.js"></script>
 		<script id="shader-fs" type="x-shader/x-fragment">
 			precision mediump float;
@@ -27,7 +28,7 @@
 												texture2D(uSampler, vTextureCoord + vec2( 0, 1))*uBlurKernel[7]+
 												texture2D(uSampler, vTextureCoord + vec2( 1, 1))*uBlurKernel[8];
 				textureColor /= uBlurWeight;
-				gl_FragColor = vec4(vLightWeighting+textureColor.rgb, 1);
+				gl_FragColor = textureColor.rgba+vec4(vLightWeighting,1);;
 			}
 		</script>
 

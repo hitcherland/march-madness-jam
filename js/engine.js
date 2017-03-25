@@ -125,6 +125,14 @@ class Mesh extends GameObject {
 		this.textureCoords=this.__textureCoords;
 		this.__started=true;
 		this.scale=this.__scale;
+
+		if(this.texture !== null) {
+			this.texture.start();
+		} else {
+			this.texture=new Texture.Texture();
+			this.texture.start();
+		}
+
 	}
 
 	get blur() {
@@ -214,9 +222,13 @@ class Mesh extends GameObject {
 		gl.uniform1f(shaderProgram.blurWeightUniform,this.blur.reduce(function(a,b){return a+b;},0));
 
 		if(this.texture !== null) {
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D,this.texture);
-			gl.uniform1i(shaderProgram.samplerUniform,0);
+			if (this.texture instanceof Texture.Texture) {
+				this.texture.draw();
+			} else {	
+				gl.activeTexture(gl.TEXTURE0);
+				gl.bindTexture(gl.TEXTURE_2D,this.texture);
+				gl.uniform1i(shaderProgram.samplerUniform,0);
+			}
 		} else {
 			gl.uniform1i(shaderProgram.samplerUniform,0);
 		}

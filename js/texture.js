@@ -48,7 +48,6 @@ Texture.FlatColorTexture=class extends Texture.Texture {
 
 	setTextureImage() {
 		var image=new Uint8Array(4);
-		console.log(this.color);
 		for(var i=0;i<4;i++)
 			image[i]=this.color[i];
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);

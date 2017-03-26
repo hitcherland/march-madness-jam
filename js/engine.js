@@ -407,6 +407,5 @@ class Game extends GameObject {
 		super.tick();
 		this.onDraw();
 		requestAnimFrame(this.onTick.bind(this));
-
 	}
 }

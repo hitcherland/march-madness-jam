@@ -75,6 +75,50 @@ class Grid extends Mesh {
 	}
 }
 
+class Cone extends Mesh {
+	constructor(subdivides,baseSize) {
+		var vertices=[0,0,-0.5,0,0,0.5];
+		var triangles=[];
+		var normals =[0,0,-1,0,0,1];
+		var textureCoords=[0,0,0,0];
+
+		for (var i=2; i<=subdivides+1; i++) {
+			var theta=i*2*Math.PI/subdivides;
+	    var sinTheta = Math.sin(theta);
+      var cosTheta = Math.cos(theta);
+			
+			vertices.push(sinTheta*baseSize);
+			vertices.push(cosTheta*baseSize);
+			vertices.push(0.5);
+			
+			normals.push(sinTheta)
+			normals.push(cosTheta)
+			normals.push(0)
+
+			textureCoords.push(sinTheta);
+			textureCoords.push(cosTheta);
+			
+			triangles.push(0);
+			triangles.push(i);
+			if(i==subdivides+1) {
+				triangles.push(2);
+			} else {
+				triangles.push(i+1)
+			}
+
+			triangles.push(i);
+			if(i==subdivides+1) {
+				triangles.push(2);
+			} else {
+				triangles.push(i+1)
+			}
+			triangles.push(1);
+		}
+
+		super(vertices,triangles,normals,textureCoords);
+	}
+
+}
 
 class Sphere extends Mesh {
 	constructor(longitudes,latitudes) {
@@ -83,9 +127,6 @@ class Sphere extends Mesh {
 		var normals=[];
 		var textureCoords=[];
 
-		var dX=2*Math.PI/longitudes;
-		var dY=2*Math.PI/latitudes;
-	
     for (var latNumber = 0; latNumber <= latitudes; latNumber++) {
       var theta = latNumber * Math.PI / latitudes;
       var sinTheta = Math.sin(theta);

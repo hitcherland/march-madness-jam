@@ -30,12 +30,30 @@ class Actor extends Mesh {
 			"horz": 1,
 		}
 
+		this.sphere=this.addChild(new Sphere(4,4));
+		this.sphere.scale=4;	
+
+		this.cone=this.addChild(new Cone(4,0.5));
+		this.cone.rotation[0]=-Math.PI/2;
+		this.cone.position[1]=-10;
+		this.cone.scale=8;
+
+		this.leftHand=this.addChild(new Sphere(4,4));
+		this.leftHand.position[0]=-7;
+		this.leftHand.position[1]=-10;
+		this.leftHand.scale=1.5;
+
+		this.rightHand=this.addChild(new Sphere(4,4));
+		this.rightHand.position[0]=7;
+		this.rightHand.position[1]=-10;
+		this.rightHand.scale=1.5;
+
 		this.direction=[0,0];
 		this.historyIndex=0;
 		this.historyLength=100;
 		this.positionalHistory=[];
 
-		this.activationRange=50;
+		this.activationRange=150;
 		this.personality = {
 			'jitter'   :0.5, // moving around a single point 
 
@@ -114,15 +132,17 @@ class Player extends Actor {
 		super();
 		this.texture=null;		
 		this.inputs=[];
-
-		this.sphere=this.addChild(new Sphere(10,10));
-		this.sphere.scale=6;	
 		this.sphere.texture=new Texture.FlatColorTexture(255,0,0);
+		this.sphere.scale=4;
 
-		this.sphere2=this.addChild(new Sphere(10,10));
-		this.sphere2.scale=50;
-		this.sphere2.position[2]=-100;
-		this.sphere2.texture=new Texture.FlatColorTexture(25,255,25);
+		this.cone.texture=new Texture.FlatColorTexture(255,0,0);
+		this.leftHand.texture=new Texture.FlatColorTexture(255,0,0);
+		this.rightHand.texture=new Texture.FlatColorTexture(255,0,0);
+
+		//this.aura=this.addChild(new Sphere(12,12));
+		//this.aura.scale=50;
+		//this.aura.position[2]=-100;
+		//this.aura.texture=new Texture.FlatColorTexture(25,255,25,25);
 	}
 
 	tick(parent) {
@@ -142,14 +162,17 @@ class Victim extends Actor {
 	constructor() {
 		super();
 		this.infectionLevel=0;
-		this.sphere=this.addChild(new Sphere(10,10));
-		this.speed['horz']=0.2;
-		this.speed['vert']=0.2;
-		this.sphere.scale=4;
+		this.speed['horz']=0.8;
+		this.speed['vert']=0.8;
 		this.generatePersonality();
 		this.impulse=[0,0];
 
-		this.sphere.texture=new Texture.FlatColorTexture(Math.random()*128,Math.random()*128,255);
+		var color=[0,Math.random()*225+30,Math.random()*225+30]
+		this.sphere.texture=new Texture.FlatColorTexture(...color);
+		this.cone.texture=new Texture.FlatColorTexture(...color);
+		this.leftHand.texture=new Texture.FlatColorTexture(...color);
+		this.rightHand.texture=new Texture.FlatColorTexture(...color);
+
 	}
 
 	generatePersonality() {
@@ -252,7 +275,7 @@ class SuperGame extends Game {
 		this.player=this.addChild(new Player());
 
 		this.victims=[]
-		for(var i=0; i<100; i++) {
+		for(var i=0; i<10; i++) {
 			this.victims[i]=this.addChild(new Victim());
 			this.victims[i].position[0]=(Math.random()-0.5)*(this.canvas.width-20);
 			this.victims[i].position[1]=(Math.random()-0.5)*(this.canvas.height-20);
